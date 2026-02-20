@@ -1,3 +1,4 @@
+Deep Analysis of TrustSkill v3.0
 Core Purpose
 TrustSkill is a security scanner specifically designed for OpenClaw skills. This is a defensive security tool that audits skill packages before they're installed or executed. It's essentially an antivirus/static analysis tool for the OpenClaw skill ecosystem.
 Use Cases (When to Deploy)
@@ -110,4 +111,34 @@ Test Results
 218 tests passed in 1.70s
 Malicious Skill Scan Results
 DEEP Mode: HIGH=32, MEDIUM=24, LOW=8
-Report Location
+
+---
+
+TrustSkill Whitelist Update Complete
+Changes Made
+1. src/rules.py - Added default whitelist patterns:
+DEFAULT_WHITELIST_PATTERNS = [
+    r'AGENTS\.md["\']?\s*[`\n]',  # Documentation references
+    r'Configure in `AGENTS\.md`',
+    # ... more patterns
+]
+DOCUMENTATION_FILES = ['SKILL.md', 'README.md', 'AGENTS.md', ...]
+TESTING_UTILITY_FILES = ['with_server.py', 'test_server.py', 'conftest.py', ...]
+2. src/analyzers/regex_analyzer.py - Added whitelist check method:
+- _is_whitelisted_pattern() - Checks if match is in whitelisted file or context
+- _is_documentation_reference() - Detects documentation vs code context
+3. src/analyzers/ast_analyzer.py - Added whitelist check for AST analysis:
+- Passes filepath to PythonASTVisitor
+- Skips subprocess.Popen(shell=True) in testing utility files
+4. SKILL.md - Documented whitelist system
+Results
+| Metric | Before | After |
+|--------|--------|-------|
+| Skills with HIGH risk | 2 | 0 |
+| Total skills scanned | 113 | 113 |
+| Test suite | 218 passed | 218 passed |
+False Positives Fixed
+| Skill | Category | Issue | Resolution |
+|-------|----------|-------|------------|
+| opencode-orchestrator | sensitive_file_access | AGENTS.md in SKILL.md | Documentation reference whitelist |
+| webapp-testing | command_injection | subprocess shell=True in with_server.py | Testing utility whitelist |

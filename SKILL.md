@@ -132,6 +132,29 @@ rules:
 
 See [security_patterns.md](references/security_patterns.md) for detailed patterns and detection rules.
 
+## Whitelist System
+
+TrustSkill v3.0+ includes a built-in whitelist for known safe patterns to reduce false positives:
+
+### Documentation Files
+Files like `SKILL.md`, `README.md`, `AGENTS.md` can reference memory/config files in documentation context without triggering security alerts.
+
+### Testing Utility Files
+Files like `with_server.py`, `test_*.py`, `conftest.py` can use `subprocess.Popen(shell=True)` for legitimate server orchestration and testing purposes.
+
+### Custom Whitelist
+Add custom whitelist patterns via YAML configuration:
+
+```yaml
+rules:
+  whitelist:
+    files:
+      - "test_*.py"
+      - "my_server.py"
+    patterns:
+      - "eval\\(\\s*['\"]1\\+1['\"]\\s*\\)"
+```
+
 ## Response to Findings
 
 ### Critical (Stop immediately)
