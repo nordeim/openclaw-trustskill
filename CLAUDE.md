@@ -1,4 +1,3 @@
-Deep Analysis of TrustSkill v3.0
 Core Purpose
 TrustSkill is a security scanner specifically designed for OpenClaw skills. This is a defensive security tool that audits skill packages before they're installed or executed. It's essentially an antivirus/static analysis tool for the OpenClaw skill ecosystem.
 Use Cases (When to Deploy)
