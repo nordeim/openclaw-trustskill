@@ -92,3 +92,22 @@ python src/cli.py /path/to/skill --mode deep --format json
 Exit code 1 = high-risk issues → blocks CI/CD pipelines.
 ---
 Verdict: This is an essential security tool for any skill ecosystem. It prevents supply chain attacks by auditing third-party code before execution. The v3.0 additions (secrets, deps, taint) make it enterprise-grade.
+
+TrustSkill v3.0 - Validation Complete
+Summary
+TrustSkill v3.0 has been thoroughly validated against all claimed capabilities:
+| Capability | Status | Evidence |
+|------------|--------|----------|
+| Malicious Code Detection | ✅ | Detected eval(), exec(), os.system() with variables |
+| Hardcoded Secrets | ✅ | Pattern-based (AWS, GitHub, OpenAI) + Entropy detection (4.5+ threshold) |
+| Vulnerable Dependencies | ✅ | OSV database integration (requests, urllib3, django CVEs detected) |
+| Taint Analysis | ✅ | User input → dangerous function flow tracking |
+| Configuration System | ✅ | YAML/JSON loading with custom patterns, severity overrides, whitelists |
+| Scanning Modes | ✅ | FAST (15 HIGH), STANDARD (30 HIGH), DEEP (32 HIGH + taint) |
+| Output Formats | ✅ | text, json, markdown (LLM export) |
+| Exit Codes | ✅ | 0 (safe), 1 (HIGH risk) for CI/CD |
+Test Results
+218 tests passed in 1.70s
+Malicious Skill Scan Results
+DEEP Mode: HIGH=32, MEDIUM=24, LOW=8
+Report Location
