@@ -1,4 +1,4 @@
-# TrustSkill v3.0 🍊
+# TrustSkill v3.1 🍊
 
 Advanced Security Scanner for OpenClaw Skills
 
