@@ -17,6 +17,8 @@ from ..rules import (
     DEFAULT_WHITELIST_PATTERNS,
     DOCUMENTATION_FILES,
     TESTING_UTILITY_FILES,
+    LOCK_FILES,
+    PLACEHOLDER_PATTERNS,
 )
 
 
@@ -25,6 +27,10 @@ class RegexAnalyzer(BaseAnalyzer):
 
     def get_name(self) -> str:
         return "RegexAnalyzer"
+
+    def _is_lock_file(self, file_path: Path) -> bool:
+        """Check if file is a lock file that should have special handling."""
+        return file_path.name in LOCK_FILES
 
     def _is_in_string_literal(self, content: str, position: int) -> bool:
         """Determine if a given position is inside a string literal."""
@@ -70,8 +76,30 @@ class RegexAnalyzer(BaseAnalyzer):
             "todo:",
             "note:",
             "security notice",
+            # i18n patterns (Chinese, Japanese, Korean)
+            "示例",
+            "配置",
+            "设置",
+            "例",
+            "例如",
+            "注意",
+            "警告",
+            "请将",
+            "填入",
+            "你的",
+            "密钥",
+            "替换",
         ]
-        return any(ind in context for ind in indicators)
+
+        if any(ind in context for ind in indicators):
+            return True
+
+        # Check for placeholder patterns
+        for pattern in PLACEHOLDER_PATTERNS:
+            if __import__("re").search(pattern, context, __import__("re").IGNORECASE):
+                return True
+
+        return False
 
     def _is_safe_service(self, url: str) -> bool:
         """Verify if a URL belongs to a whitelisted safe service."""
@@ -87,8 +115,17 @@ class RegexAnalyzer(BaseAnalyzer):
 
         # Check default whitelist patterns
         for whitelist_pattern in DEFAULT_WHITELIST_PATTERNS:
-            if re.search(whitelist_pattern, context, re.IGNORECASE | re.DOTALL):
+            if __import__("re").search(
+                whitelist_pattern,
+                context,
+                __import__("re").IGNORECASE | __import__("re").DOTALL,
+            ):
                 return True
+
+        # Lock files: Skip most security checks for package-lock.json, yarn.lock, etc.
+        # These files contain integrity hashes which are safe by design
+        if self._is_lock_file(file_path):
+            return True
 
         # Documentation files: Allow references to memory files
         if file_path.name in DOCUMENTATION_FILES:
@@ -120,11 +157,24 @@ class RegexAnalyzer(BaseAnalyzer):
 
         # Check if the line contains just a reference (not an actual file operation)
         current_line = lines_before[-1] if lines_before else ""
+
         # It's a reference if it's in backticks or quotes (documentation style)
         if "`" in current_line or '"' in current_line or "'" in current_line:
             # But not if it's an open() call
             if "open(" not in current_line and "with open" not in current_line:
                 return True
+
+        # Check for placeholder patterns that indicate documentation examples
+        for pattern in PLACEHOLDER_PATTERNS:
+            if __import__("re").search(
+                pattern, current_line, __import__("re").IGNORECASE
+            ):
+                return True
+
+        # Check for i18n documentation patterns
+        i18n_indicators = ["配置", "设置", "示例", "请将", "填入", "你的", "密钥"]
+        if any(ind in current_line for ind in i18n_indicators):
+            return True
 
         return False
 
@@ -146,6 +196,10 @@ class RegexAnalyzer(BaseAnalyzer):
             for pattern, description in pattern_list:
                 for match in re.finditer(pattern, content, re.IGNORECASE):
                     pos = match.start()
+
+                    # Skip lock files for most patterns
+                    if self._is_lock_file(file_path):
+                        continue
 
                     # Skip matches in string literals (likely false positives)
                     if self._is_in_string_literal(content, pos):

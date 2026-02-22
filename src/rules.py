@@ -16,11 +16,16 @@ HIGH_RISK_PATTERNS = {
         ),
         (r"compile\s*\([^)]*[\+\%\$\{\}]", "compile() with variable"),
     ],
+    "data_upload": [
+        (r"requests\.(post|put)\s*\([^)]*http", "HTTP POST/PUT to external server"),
+        (r"http\.client.*(?:POST|PUT)", "HTTP client upload"),
+        (r"socket\.(socket|connect).*send", "Socket data transmission"),
+    ],
     "data_exfiltration": [
-        (r"requests\.(post|put)\s*\([^)]*http", "HTTP POST to external server"),
-        (r"urllib\.(request|urlopen)", "urllib network request"),
-        (r"http\.client", "HTTP client usage"),
-        (r"socket\.(socket|connect)", "Socket network connection"),
+        (
+            r"requests\.(post|put)\s*\([^)]*(?:password|token|secret|key|credential)",
+            "Sensitive data upload",
+        ),
     ],
     "file_deletion": [
         (r"shutil\.rmtree\s*\([^)]*[\/\*]", "Recursive directory deletion"),
@@ -50,6 +55,12 @@ MEDIUM_RISK_PATTERNS = {
         (r"urllib", "urllib usage"),
         (r"httpx", "httpx usage"),
         (r"aiohttp", "aiohttp usage"),
+    ],
+    "data_download": [
+        (r"urllib\.request\.urlretrieve", "File download via urllib"),
+        (r"requests\.get\s*\([^)]*stream\s*=\s*True", "Streaming download"),
+        (r"wget\s+", "wget download command"),
+        (r"curl\s+-[Oo]", "curl download"),
     ],
     "file_access_outside_workspace": [
         (r'open\s*\([^)]*[\'"]\s*/etc/', "System file access (/etc)"),
@@ -192,6 +203,56 @@ DEFAULT_WHITELIST_PATTERNS = [
     r"with_server\.py",  # Server orchestration utilities
     r"test_.*\.py",  # Test files
     r"_test\.py",  # Test files (alternative naming)
+    # NPM/PNPM/Yarn integrity hashes - these are SRI hashes, not secrets
+    r'"integrity"\s*:\s*"sha(256|384|512)-[A-Za-z0-9+/=]+',
+    r"sha(256|384|512)-[A-Za-z0-9+/=]{40,}",
+    # Placeholder patterns in documentation
+    r"your[_-]?(api[_-]?key|secret|token|password)[_-]?here",
+    r"REPLACE[_-]?ME",
+    r"xxx+",
+    r"sk-[a-zA-Z0-9_]*\.{3}",
+    r"<[A-Z_]+>",  # <API_KEY>, <YOUR_TOKEN>, etc.
+    r"\$\{[^}]+\}",  # ${VARIABLE} template patterns
+    # i18n documentation patterns (Chinese, Japanese, Korean, etc.)
+    r"[配置设置示例请将填入你的密钥]+",
+]
+
+# Lock files that contain integrity hashes (safe by design)
+LOCK_FILES = [
+    "package-lock.json",
+    "yarn.lock",
+    "pnpm-lock.yaml",
+    "composer.lock",
+    "poetry.lock",
+    "Cargo.lock",
+    "Gemfile.lock",
+]
+
+# Placeholder patterns that indicate documentation examples, not real secrets
+PLACEHOLDER_PATTERNS = [
+    r"your[_-]?\w+[_-]?here",
+    r"xxx+",
+    r"0000+",
+    r"12345+",
+    r"test[_-]?\w+",
+    r"dummy",
+    r"sample",
+    r"fake",
+    r"example",
+    r"placeholder",
+    r"REPLACE[_-]?ME",
+    r"TODO",
+    r"<[A-Z_]+>",
+    r"\$\{[^}]+\}",
+    r"{{[^}]+}}",
+    r"sk-\.\.\.",
+    r"sk_?\.\.\.",
+    r"your_api_key",
+    r"your_secret",
+    r"your_token",
+    r"your_password",
+    r"your[_-]?key",
+    r"[配填入设置示例密钥你的]+",
 ]
 
 # Files that are known to be documentation-only
